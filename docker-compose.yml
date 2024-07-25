@@ -4,7 +4,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: Dockerfiles/Dockerfile.drf
+      dockerfile: Dockerfile.drf
     restart: unless-stopped
     volumes:
       - ./staticfiles:/app/staticfiles
@@ -15,6 +15,8 @@ services:
       db:
         condition: service_healthy
       rabbitmq:
+        condition: service_started
+      elasticsearch:
         condition: service_started
     networks:
       - tsm
@@ -58,7 +60,7 @@ services:
   celery-worker:
     build:
       context: .
-      dockerfile: Dockerfiles/Dockerfile.celery
+      dockerfile: Dockerfile.celery
     restart: always
     depends_on:
       - backend
@@ -69,7 +71,9 @@ services:
       - tsm
 
   flower:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.celery
     command: celery -A task_manager flower --port=5555
     ports:
       - "5555:5555"
@@ -98,5 +102,5 @@ configs:
     file: ./postgres_conf/postgres_conf/pg_hba.conf
 
 networks:
-  site:
+  tsm:
   elk:
