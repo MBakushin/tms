@@ -15,8 +15,6 @@ import os
 from dotenv import load_dotenv
 from pathlib import Path
 
-from elasticsearch_dsl import connections
-
 
 load_dotenv()
 
@@ -28,10 +26,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 # change for production
 ALLOWED_HOSTS = ['*']
@@ -52,7 +50,6 @@ INSTALLED_APPS = [
 
     # add drf
     'rest_framework',
-    'django_filters',
     'rest_framework_swagger',
     'drf_yasg',
 

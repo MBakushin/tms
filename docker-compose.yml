@@ -1,13 +1,12 @@
 version: '3.9'
 
 services:
-  backend:
+  drf:
     build:
       context: .
       dockerfile: Dockerfile.drf
     restart: unless-stopped
     volumes:
-      - ./staticfiles:/app/staticfiles
       - ./media:/app/media
     ports:
       - "8000:8000"
@@ -39,7 +38,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     configs:
       - source: postgresql_config
         target: /etc/postgresql/postgresql.conf
@@ -63,26 +62,26 @@ services:
       dockerfile: Dockerfile.celery
     restart: always
     depends_on:
-      - backend
+      - drf
       - rabbitmq
-      - db
     command: [ "celery", "-A", "config", "worker", "--loglevel=info" ]
     networks:
       - tsm
 
   flower:
-    build:
-      context: .
-      dockerfile: Dockerfile.celery
-    command: celery -A task_manager flower --port=5555
+    image: mher/flower
     ports:
       - "5555:5555"
+    command: [ "celery", "--broker=${CELERY_BROKER_URL}", "flower" ]
     depends_on:
-      - db
       - rabbitmq
+    environment:
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+    networks:
+      - tsm
 
   elasticsearch:
-    image: elasticsearch:7.9.3
+    image: elasticsearch:8.10.1
     environment:
       - node.name=elasticsearch
       - discovery.type=single-node
@@ -97,9 +96,9 @@ volumes:
 
 configs:
   postgresql_config:
-    file: ./postgres_conf/postgres_conf/postgresql.conf
+    file: ./postgres_conf/postgresql.conf
   pg_hba_config:
-    file: ./postgres_conf/postgres_conf/pg_hba.conf
+    file: ./postgres_conf/pg_hba.conf
 
 networks:
   tsm:
