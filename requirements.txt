@@ -21,5 +21,7 @@ python-utils
 django-rest-swagger
 drf-yasg
 drf-writable-nested
+flower
+elasticsearch-dsl
 Pillow
 whitenoise
