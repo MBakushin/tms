@@ -11,10 +11,11 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 import os
-from datetime import timedelta
 
 from dotenv import load_dotenv
 from pathlib import Path
+
+from elasticsearch_dsl import connections
 
 
 load_dotenv()
@@ -59,6 +60,8 @@ INSTALLED_APPS = [
 
     # add postgres
     'django.contrib.postgres',
+
+    'django_celery_results',
 
     # tsm
     'tsm',
@@ -111,10 +114,6 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
 DATABASES = {
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': BASE_DIR / 'db.sqlite3',
-    # },
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.getenv('POSTGRES_DB'),
@@ -199,3 +198,8 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
+
+CELERY_FLOWER_PORT = 5555
+
+# connection for elasticsearch
+connections.create_connection(hosts=['elasticsearch'])

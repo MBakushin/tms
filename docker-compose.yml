@@ -1,0 +1,102 @@
+version: '3.9'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfiles/Dockerfile.drf
+    restart: unless-stopped
+    volumes:
+      - ./staticfiles:/app/staticfiles
+      - ./media:/app/media
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    networks:
+      - tsm
+
+  db:
+    image: postgres:14.8-alpine3.18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      LANG: en_US.utf8
+      LANGUAGE: en_US:en
+      LC_ALL: en_US.utf8
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    configs:
+      - source: postgresql_config
+        target: /etc/postgresql/postgresql.conf
+      - source: pg_hba_config
+        target: /etc/postgresql/pg_hba.conf
+    networks:
+      - tsm
+
+  rabbitmq:
+    image: 'rabbitmq:3-management'
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+    restart: always
+    networks:
+      - tsm
+
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfiles/Dockerfile.celery
+    restart: always
+    depends_on:
+      - backend
+      - rabbitmq
+      - db
+    command: [ "celery", "-A", "config", "worker", "--loglevel=info" ]
+    networks:
+      - tsm
+
+  flower:
+    build: .
+    command: celery -A task_manager flower --port=5555
+    ports:
+      - "5555:5555"
+    depends_on:
+      - db
+      - rabbitmq
+
+  elasticsearch:
+    image: elasticsearch:7.9.3
+    environment:
+      - node.name=elasticsearch
+      - discovery.type=single-node
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - elk
+
+volumes:
+  postgres_data:
+
+configs:
+  postgresql_config:
+    file: ./postgres_conf/postgres_conf/postgresql.conf
+  pg_hba_config:
+    file: ./postgres_conf/postgres_conf/pg_hba.conf
+
+networks:
+  site:
+  elk:
