@@ -1,0 +1,10 @@
+cluster.name: "elasticsearch"
+node.name: "elasticsearch-node"
+network.host: 0.0.0.0
+http.port: 9200
+
+http.cors.enabled: true
+http.cors.allow-origin: "*"
+
+path.logs: /usr/share/elasticsearch/logs
+path.data: /usr/share/elasticsearch/data

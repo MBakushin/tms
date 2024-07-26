@@ -70,6 +70,7 @@ services:
 
   flower:
     image: mher/flower
+    restart: always
     ports:
       - "5555:5555"
     command: [ "celery", "--broker=${CELERY_BROKER_URL}", "flower" ]
@@ -81,15 +82,23 @@ services:
       - tsm
 
   elasticsearch:
-    image: elasticsearch:8.10.1
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.10.1
+    restart: always
     environment:
       - node.name=elasticsearch
       - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms2g -Xmx2g
+    mem_limit: 4g
+    cpu_count: 2
     ports:
       - "9200:9200"
       - "9300:9300"
+    volumes:
+      - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
     networks:
-      - elk
+      - tsm
 
 volumes:
   postgres_data:
@@ -102,4 +111,3 @@ configs:
 
 networks:
   tsm:
-  elk:
